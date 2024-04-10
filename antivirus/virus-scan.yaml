@@ -1,0 +1,40 @@
+---
+- name: Clamav scanner
+  hosts: localhost
+  no_log: false
+  tasks:
+    - name: Load urls from file
+      ansible.builtin.slurp:
+        src: files.txt
+      register: urls_content
+
+    - name: Convert urls to list
+      set_fact:
+        urls: "{{ urls_content['content'] | b64decode | split('\n') | map('trim') | select('match', '^-.+') | map('replace', '- ', '') | list }}"
+
+    - name: Create directory for files
+      ansible.builtin.shell:
+        cmd: "rm -rf ./files ; mkdir ./files"
+
+    - debug:
+        var: urls
+
+    - name: Downloading files
+      ansible.builtin.uri:
+        url: "{{ item }}"
+        dest: "./files/{{ item | basename }}"
+        return_content: no
+        creates: true
+      loop: "{{ urls }}"
+      register: downloaded_files
+
+    - name: Scanning
+      ansible.builtin.shell:
+        cmd: "/usr/bin/clamscan ./files > results.txt ; true"
+      ignore_errors: true
+
+    - name: Delete files
+      ansible.builtin.file:
+        path: "./files"
+        state: absent
+
