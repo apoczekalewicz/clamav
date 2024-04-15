@@ -1,13 +1,13 @@
 #FROM quay.io/centoshyperscale/centos:stream9
 FROM fedora-minimal
 USER root
-RUN 	microdnf --nodocs -y --setopt=install_weak_deps=False install clamav* ansible ansible-collection-ansible-posix ansible ansible-collection-community-general mc && \
+RUN 	microdnf --nodocs -y --setopt=install_weak_deps=False install clamav clamav-freshclam ansible-core ansible-collection-ansible-posix ansible-collection-community-general mc && \
 	microdnf -y clean all 
 RUN freshclam
 
 COPY ./entrypoint.sh /entrypoint.sh
 COPY ./antivirus /antivirus
-RUN chown -R 1000:0 /antivirus && chmod +rwX /antivirus
+RUN chown -R 1000:0 /antivirus && chmod -R g+rwX /antivirus
 
 
 ENV HOME=/tmp

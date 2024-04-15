@@ -8,7 +8,7 @@ CONTAINER=$(buildah from scratch)
 MOUNTPOINT=$(buildah mount $CONTAINER)
 
 # Install a basic filesystem and packages
-dnf install -y --installroot $MOUNTPOINT  --releasever 39 --nodocs --setopt install_weak_deps=False glibc-minimal-langpack mc ansible clamav*
+dnf install -y --installroot $MOUNTPOINT  --releasever 39 --nodocs --setopt install_weak_deps=False glibc-minimal-langpack clamav clamav-freshclam ansible-core ansible-collection-ansible-posix ansible-collection-community-general mc 
 
 dnf clean all -y --installroot $MOUNTPOINT --releasever 39
 
@@ -16,8 +16,8 @@ dnf clean all -y --installroot $MOUNTPOINT --releasever 39
 cp ./entrypoint.sh $MOUNTPOINT
 
 cp -r ./antivirus $MOUNTPOINT 
-chown -R 1000:0 $MOUNTPOINT/antivirus
-chmod -R g+rwX $MOUNTPOINT/antivirus
+chown -R 1000:0 $MOUNTPOINT/antivirus $MOUNTPOINT/etc/clamd.d
+chmod -R g+rwX $MOUNTPOINT/antivirus $MOUNTPOINT/etc/clamd.d
 
 
 # Network for freshclam command (update clamav database)
@@ -37,6 +37,9 @@ buildah config --cmd "/bin/bash -c /entrypoint.sh" $CONTAINER
 
 # HOME env (for mc)
 buildah config --env HOME=/tmp $CONTAINER
+
+# WORKING DIR
+buildah config --workingdir /antivirus $CONTAINER
 
 # Save the container to an image
 buildah commit --squash $CONTAINER quay.io/apoczeka/clamav:latest
